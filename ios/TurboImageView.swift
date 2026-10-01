@@ -107,9 +107,10 @@ final class TurboImageView : UIView {
       // Prefer an already cached image because it is immediately available.
       if let memoryCacheKey = placeholder.value(forKey: "memoryCacheKey") as? String {
         let request = ImageRequest(url: URL(string: memoryCacheKey))
-        let memoryCachedImage = ImagePipeline.shared.cache.cachedImage(for: request, caches: .memory)?.image
-        lazyImageView.placeholderImage = memoryCachedImage
-        return
+        if let memoryCachedImage = ImagePipeline.shared.cache.cachedImage(for: request, caches: .memory)?.image {
+          lazyImageView.placeholderImage = memoryCachedImage
+          return
+        }
       }
 
       if let blurhash = placeholder.value(forKey: "blurhash") as? String {

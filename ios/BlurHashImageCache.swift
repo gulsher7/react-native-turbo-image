@@ -21,7 +21,7 @@ final class BlurHashImageCache {
         let key = cacheKey(for: blurHash, size: size, punch: punch)
 
         if let cachedImage = cache.object(forKey: key as NSString) {
-            completion(cachedImage)
+            completeOnMain(completion, image: cachedImage)
             return
         }
 
@@ -46,7 +46,13 @@ final class BlurHashImageCache {
             )
 
             guard let self else {
-                completion(image)
+                if Thread.isMainThread {
+                    completion(image)
+                } else {
+                    DispatchQueue.main.async {
+                        completion(image)
+                    }
+                }
                 return
             }
 

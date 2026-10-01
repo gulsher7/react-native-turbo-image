@@ -11,7 +11,7 @@ import kotlin.math.withSign
 object BlurHashDecoder {
 
   // Cache decoded bitmaps so the same placeholder is not decoded repeatedly.
-  private val bitmapCache = object : LruCache<String, Bitmap>(100) {
+  private val bitmapCache = object : LruCache<String, Bitmap>(256 * 1024) {
     override fun sizeOf(key: String, bitmap: Bitmap): Int = bitmap.byteCount
   }
 

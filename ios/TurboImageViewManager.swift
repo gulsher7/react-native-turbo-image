@@ -55,6 +55,7 @@ extension TurboImageViewManager {
   func clearMemoryCache(_ resolve: @escaping RCTPromiseResolveBlock,
                         reject: @escaping RCTPromiseRejectBlock) {
     ImageCache.shared.removeAll()
+    BlurHashImageCache.shared.removeAll()
     resolve("Success")
   }
   

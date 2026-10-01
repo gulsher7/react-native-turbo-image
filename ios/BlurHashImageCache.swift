@@ -62,14 +62,13 @@ final class BlurHashImageCache {
 
     func removeAll() {
         lock.lock()
-        inFlight.removeAll()
         lock.unlock()
 
         cache.removeAllObjects()
     }
 
     private func cacheKey(for blurHash: String, size: CGSize, punch: Float) -> String {
-        "(blurHash)|\(Int(size.width))x\(Int(size.height))|\(punch)"
+        "\(blurHash)|\(Int(size.width))x\(Int(size.height))|\(punch)"
     }
 
     private func finish(key: String, image: UIImage?) {

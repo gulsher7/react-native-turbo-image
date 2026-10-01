@@ -30,6 +30,7 @@ final class TurboImageView : UIView {
   
   private var imageRequest: ImageRequest?
   private var requestInFlight: Bool = false
+  private var placeholderGeneration: Int = 0
   #if !os(tvOS) && canImport(VisionKit)
   private var liveTextTask: Task<Void, Never>?
   #endif
@@ -95,30 +96,38 @@ final class TurboImageView : UIView {
   
   @objc var placeholder: NSDictionary? {
     didSet {
-      guard let placeholder else { return }
-      
-      if let blurhash = placeholder.value(forKey: "blurhash") as? String {
-        DispatchQueue.global(qos: .userInteractive).async { [weak self] in
-          let image = UIImage(blurHash: blurhash)
-          DispatchQueue.main.async { [weak self] in
-            self?.lazyImageView.placeholderImage = image
-          }
-        }
+      placeholderGeneration += 1
+      let generation = placeholderGeneration
+
+      guard let placeholder else {
+        lazyImageView.placeholderImage = nil
+        return
       }
-      
-      if let thumbhash = placeholder.value(forKey: "thumbhash") as? String {
-        DispatchQueue.global(qos: .userInteractive).async { [weak self] in
-          let image = UIImage(thumbhash: thumbhash)
-          DispatchQueue.main.async { [weak self] in
-            self?.lazyImageView.placeholderImage = image
-          }
-        }
-      }
-      
+
+      // Prefer an already cached image because it is immediately available.
       if let memoryCacheKey = placeholder.value(forKey: "memoryCacheKey") as? String {
         let request = ImageRequest(url: URL(string: memoryCacheKey))
         let memoryCachedImage = ImagePipeline.shared.cache.cachedImage(for: request, caches: .memory)?.image
         lazyImageView.placeholderImage = memoryCachedImage
+        return
+      }
+
+      if let blurhash = placeholder.value(forKey: "blurhash") as? String {
+        BlurHashImageCache.shared.image(for: blurhash) { [weak self] image in
+          guard let self, self.placeholderGeneration == generation else { return }
+          self.lazyImageView.placeholderImage = image
+        }
+        return
+      }
+
+      if let thumbhash = placeholder.value(forKey: "thumbhash") as? String {
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+          let image = UIImage(thumbhash: thumbhash)
+          DispatchQueue.main.async { [weak self] in
+            guard let self, self.placeholderGeneration == generation else { return }
+            self.lazyImageView.placeholderImage = image
+          }
+        }
       }
     }
   }

@@ -32,6 +32,7 @@ class TurboImageListener(
   override fun onSuccess(request: ImageRequest, result: SuccessResult) {
     super.onSuccess(request, result)
     view.markLoadSuccess(loadSignature)
+    view.syncGifAnimation()
 
     val reactContext = view.context as ReactContext
     UIManagerHelper.getEventDispatcher(reactContext, view.id)?.let {

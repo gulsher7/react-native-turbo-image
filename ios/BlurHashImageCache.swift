@@ -7,6 +7,14 @@ final class BlurHashImageCache {
     private let lock = NSLock()
     private var inFlight: [String: [(UIImage?) -> Void]] = [:]
 
+#if DEBUG
+    private static let statsLock = NSLock()
+    private static var requestCount = 0
+    private static var hitCount = 0
+    private static var missCount = 0
+    private static var decodeCount = 0
+#endif
+
     private init() {
         cache.countLimit = 200
         cache.totalCostLimit = 4 * 1024 * 1024
@@ -30,6 +38,7 @@ final class BlurHashImageCache {
         }
 
         Self.recordMiss()
+        Self.recordMiss()
         Self.debugLog("CACHE MISS | key=\(key)")
 
         var shouldDecode = false
@@ -50,6 +59,7 @@ final class BlurHashImageCache {
             return
         }
 
+        Self.recordDecode()
         Self.recordDecode()
         Self.debugLog("DECODE QUEUED | key=\(key) | qos=utility")
 

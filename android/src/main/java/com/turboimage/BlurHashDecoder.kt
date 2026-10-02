@@ -2,12 +2,25 @@ package com.turboimage
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.util.Log
+import android.util.LruCache
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.withSign
 
 // copy from https://github.com/woltapp/blurhash/blob/master/Kotlin/lib/src/main/java/com/wolt/blurhashkt/BlurHashDecoder.kt
 object BlurHashDecoder {
+
+  private const val TAG = "TurboImageBlurHash"
+
+  private fun debugLog(message: String) {
+    if (BuildConfig.DEBUG) Log.d(TAG, message)
+  }
+
+  // Cache decoded bitmaps so the same placeholder is not decoded repeatedly.
+  private val bitmapCache = object : LruCache<String, Bitmap>(256 * 1024) {
+    override fun sizeOf(key: String, bitmap: Bitmap): Int = bitmap.byteCount
+  }
 
   // cache Math.cos() calculations to improve performance.
   // The number of calculations can be huge for many bitmaps: width * height * numCompX * numCompY * 2 * nBitmaps
@@ -21,8 +34,10 @@ object BlurHashDecoder {
    * if the app needs memory it is recommended to clear it.
    */
   fun clearCache() {
+    bitmapCache.evictAll()
     cacheCosinesX.clear()
     cacheCosinesY.clear()
+    debugLog("CACHE CLEARED")
   }
 
   /**
@@ -36,6 +51,17 @@ object BlurHashDecoder {
     if (blurHash == null || blurHash.length < 6) {
       return null
     }
+    val cacheKey = "$blurHash|$width|$height|$punch"
+    if (useCache) {
+      bitmapCache.get(cacheKey)?.let {
+        debugLog("CACHE HIT | size=${width}x${height}")
+        return it
+      }
+      debugLog("CACHE MISS | size=${width}x${height}")
+    }
+
+    val start = System.nanoTime()
+    debugLog("DECODE START | size=${width}x${height}")
     val numCompEnc = decode83(blurHash, 0, 1)
     val numCompX = (numCompEnc % 9) + 1
     val numCompY = (numCompEnc / 9) + 1
@@ -54,7 +80,15 @@ object BlurHashDecoder {
         decodeAc(colorEnc, maxAc * punch)
       }
     }
-    return composeBitmap(width, height, numCompX, numCompY, colors, useCache)
+    val bitmap = composeBitmap(width, height, numCompX, numCompY, colors, useCache)
+    if (useCache) {
+      bitmapCache.put(cacheKey, bitmap)
+      debugLog("CACHE STORE | size=${width}x${height} | cost=${bitmap.byteCount / 1024}KB")
+    }
+
+    val durationMs = (System.nanoTime() - start) / 1_000_000.0
+    debugLog("DECODE END | result=SUCCESS | size=${width}x${height} | duration=${"%.2f".format(durationMs)}ms")
+    return bitmap
   }
 
   private fun decode83(str: String, from: Int = 0, to: Int = str.length): Int {

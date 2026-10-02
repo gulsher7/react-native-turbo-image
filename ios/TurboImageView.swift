@@ -148,6 +148,12 @@ final class TurboImageView : UIView {
     }
   }
   
+  @objc var gifPaused: Bool = false {
+    didSet {
+      syncGifAnimation()
+    }
+  }
+  
   @objc var format: NSString? {
     didSet {
       guard let format = format as? String else { return }
@@ -282,6 +288,9 @@ fileprivate extension TurboImageView {
         let view = GIFImageView()
         view.contentMode = ResizeMode(rawValue: self.resizeMode)?.contentMode ?? .scaleToFill
         view.animate(withGIFData: data)
+        if self.gifPaused {
+          view.stopAnimatingGIF()
+        }
         return view
       }
       return nil

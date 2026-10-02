@@ -22,6 +22,25 @@ object BlurHashDecoder {
     override fun sizeOf(key: String, bitmap: Bitmap): Int = bitmap.byteCount
   }
 
+  @Volatile private var requestCount = 0
+  @Volatile private var hitCount = 0
+  @Volatile private var missCount = 0
+  @Volatile private var decodeCount = 0
+
+  private fun recordRequest() {
+    requestCount++
+    if (requestCount % 50 == 0) debugStats()
+  }
+
+  private fun debugStats() {
+    val requests = requestCount
+    val hits = hitCount
+    val misses = missCount
+    val decodes = decodeCount
+    val hitRate = if (requests > 0) hits * 100.0 / requests else 0.0
+    debugLog("STATS | requests=$requests | hits=$hits | misses=$misses | decodes=$decodes | hitRate=" + "%.2f".format(hitRate) + "%")
+  }
+
   // cache Math.cos() calculations to improve performance.
   // The number of calculations can be huge for many bitmaps: width * height * numCompX * numCompY * 2 * nBitmaps
   // the cache is enabled by default, it is recommended to disable it only when just a few images are displayed
@@ -60,15 +79,19 @@ object BlurHashDecoder {
     }
     val cacheKey = "$blurHash|$width|$height|$punch"
     if (useBitmapCache) {
+      recordRequest()
       bitmapCache.get(cacheKey)?.let {
+        hitCount++
         debugLog("CACHE HIT | size=${width}x${height}")
         return it
       }
+      missCount++
       debugLog("CACHE MISS | size=${width}x${height}")
     }
 
     val start = System.nanoTime()
     if (useBitmapCache) {
+      decodeCount++
       debugLog("DECODE START | size=${width}x${height}")
     }
     val numCompEnc = decode83(blurHash, 0, 1)

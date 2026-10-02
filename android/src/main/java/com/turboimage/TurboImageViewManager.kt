@@ -251,6 +251,9 @@ class TurboImageViewManager : SimpleViewManager<TurboImageView>(), LifecycleEven
 
   @ReactProp(name = "enableBlurHashOptimization", defaultBoolean = false)
   fun setEnableBlurHashOptimization(view: TurboImageView, enabled: Boolean) {
+    if (BuildConfig.DEBUG) {
+      Log.d("[TurboImage][BlurHash][PERF]", "FLAG | enableBlurHashOptimization=$enabled")
+    }
     view.enableBlurHashOptimization = enabled
   }
 

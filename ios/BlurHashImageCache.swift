@@ -21,12 +21,12 @@ final class BlurHashImageCache {
         let key = cacheKey(for: blurHash, size: size, punch: punch)
 
         if let cachedImage = cache.object(forKey: key as NSString) {
-            Self.Self.debugLog("CACHE HIT | key=\(key) | cacheCount=\(cache.countLimit)")
+            Self.debugLog("CACHE HIT | key=\(key) | cacheCount=\(cache.countLimit)")
             Self.completeOnMain(completion, image: cachedImage)
             return
         }
 
-        debugLog("CACHE MISS | key=\(key)")
+        Self.debugLog("CACHE MISS | key=\(key)")
 
         var shouldDecode = false
         var waitingCount = 0
@@ -42,11 +42,11 @@ final class BlurHashImageCache {
         lock.unlock()
 
         if !shouldDecode {
-            debugLog("IN-FLIGHT HIT | key=\(key) | waitingCallbacks=\(waitingCount)")
+            Self.debugLog("IN-FLIGHT HIT | key=\(key) | waitingCallbacks=\(waitingCount)")
             return
         }
 
-        debugLog("DECODE QUEUED | key=\(key) | qos=utility")
+        Self.debugLog("DECODE QUEUED | key=\(key) | qos=utility")
 
         DispatchQueue.global(qos: .utility).async { [weak self] in
             let start = CFAbsoluteTimeGetCurrent()
@@ -82,7 +82,7 @@ final class BlurHashImageCache {
 
     func removeAll() {
         cache.removeAllObjects()
-        debugLog("CACHE CLEARED | BlurHash cache removed")
+        Self.debugLog("CACHE CLEARED | BlurHash cache removed")
     }
 
     private func cacheKey(
@@ -106,7 +106,7 @@ final class BlurHashImageCache {
                 cost: cost
             )
 
-            debugLog(
+            Self.debugLog(
                 String(
                     format: "CACHE STORE | key=%@ | cost=%.2fKB",
                     key,
@@ -119,7 +119,7 @@ final class BlurHashImageCache {
         let completions = inFlight.removeValue(forKey: key) ?? []
         lock.unlock()
 
-        debugLog(
+        Self.debugLog(
             "COMPLETE | key=\(key) | callbacks=\(completions.count) | cached=\(image != nil)"
         )
 
@@ -149,7 +149,7 @@ final class BlurHashImageCache {
         return cgImage.bytesPerRow * cgImage.height
     }
 
-    private static func debugLog(_ message: String) {
+    private static func Self.debugLog(_ message: String) {
 #if DEBUG
         print("[TurboImage][BlurHash] \(message)")
 #endif

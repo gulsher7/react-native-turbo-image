@@ -34,10 +34,17 @@ final class TurboImageView : UIView {
 
   @objc var enableBlurHashOptimization: Bool = false {
     didSet {
+      Self.debugLog("FLAG | enableBlurHashOptimization=\(enableBlurHashOptimization)")
       if placeholder != nil {
         updatePlaceholder()
       }
     }
+  }
+
+  private static func debugLog(_ message: String) {
+#if DEBUG
+    print("[TurboImage][BlurHash][PERF] \(message)")
+#endif
   }
   #if !os(tvOS) && canImport(VisionKit)
   private var liveTextTask: Task<Void, Never>?

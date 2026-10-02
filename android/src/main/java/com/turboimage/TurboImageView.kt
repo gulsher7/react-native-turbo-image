@@ -50,9 +50,9 @@ class TurboImageView(private val reactContext: ThemedReactContext) :
 
     (drawable as? Animatable)?.let { animatable ->
       if (gifPaused) {
-        animatable.stop()
+        if (animatable.isRunning) animatable.stop()
       } else {
-        animatable.start()
+        if (!animatable.isRunning) animatable.start()
       }
     }
   }

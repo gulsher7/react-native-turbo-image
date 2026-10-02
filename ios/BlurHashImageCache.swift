@@ -149,7 +149,7 @@ final class BlurHashImageCache {
         return cgImage.bytesPerRow * cgImage.height
     }
 
-    private static func Self.debugLog(_ message: String) {
+    private static func debugLog(_ message: String) {
 #if DEBUG
         print("[TurboImage][BlurHash] \(message)")
 #endif

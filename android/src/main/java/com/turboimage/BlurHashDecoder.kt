@@ -47,12 +47,19 @@ object BlurHashDecoder {
    *                 if the cache does not exist yet it will be created and populated with new calculations.
    *                 By default it is true.
    */
-  fun decode(blurHash: String?, width: Int, height: Int, punch: Float = 1f, useCache: Boolean = true): Bitmap? {
+  fun decode(
+    blurHash: String?,
+    width: Int,
+    height: Int,
+    punch: Float = 1f,
+    useCache: Boolean = true,
+    useBitmapCache: Boolean = true
+  ): Bitmap? {
     if (blurHash == null || blurHash.length < 6) {
       return null
     }
     val cacheKey = "$blurHash|$width|$height|$punch"
-    if (useCache) {
+    if (useBitmapCache) {
       bitmapCache.get(cacheKey)?.let {
         debugLog("CACHE HIT | size=${width}x${height}")
         return it
@@ -61,7 +68,9 @@ object BlurHashDecoder {
     }
 
     val start = System.nanoTime()
-    debugLog("DECODE START | size=${width}x${height}")
+    if (useBitmapCache) {
+      debugLog("DECODE START | size=${width}x${height}")
+    }
     val numCompEnc = decode83(blurHash, 0, 1)
     val numCompX = (numCompEnc % 9) + 1
     val numCompY = (numCompEnc / 9) + 1
@@ -81,13 +90,15 @@ object BlurHashDecoder {
       }
     }
     val bitmap = composeBitmap(width, height, numCompX, numCompY, colors, useCache)
-    if (useCache) {
+    if (useBitmapCache) {
       bitmapCache.put(cacheKey, bitmap)
       debugLog("CACHE STORE | size=${width}x${height} | cost=${bitmap.byteCount / 1024}KB")
     }
 
     val durationMs = (System.nanoTime() - start) / 1_000_000.0
-    debugLog("DECODE END | result=SUCCESS | size=${width}x${height} | duration=${"%.2f".format(durationMs)}ms")
+    if (useBitmapCache) {
+      debugLog("DECODE END | result=SUCCESS | size=${width}x${height} | duration=" + "%.2f".format(durationMs) + "ms")
+    }
     return bitmap
   }
 

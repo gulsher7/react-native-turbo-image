@@ -249,6 +249,11 @@ class TurboImageViewManager : SimpleViewManager<TurboImageView>(), LifecycleEven
     view.allowHardware = allowHardware
   }
 
+  @ReactProp(name = "enableBlurHashOptimization", defaultBoolean = false)
+  fun setEnableBlurHashOptimization(view: TurboImageView, enabled: Boolean) {
+    view.enableBlurHashOptimization = enabled
+  }
+
   @ReactProp(name = "format")
   fun setFormat(view: TurboImageView, format: String?) {
     view.format = format

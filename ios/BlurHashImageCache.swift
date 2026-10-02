@@ -21,8 +21,8 @@ final class BlurHashImageCache {
         let key = cacheKey(for: blurHash, size: size, punch: punch)
 
         if let cachedImage = cache.object(forKey: key as NSString) {
-            debugLog("CACHE HIT | key=\(key) | cacheCount=\(cache.countLimit)")
-            completeOnMain(completion, image: cachedImage)
+            Self.Self.debugLog("CACHE HIT | key=\(key) | cacheCount=\(cache.countLimit)")
+            Self.completeOnMain(completion, image: cachedImage)
             return
         }
 
@@ -51,7 +51,7 @@ final class BlurHashImageCache {
         DispatchQueue.global(qos: .utility).async { [weak self] in
             let start = CFAbsoluteTimeGetCurrent()
 
-            debugLog("DECODE START | key=\(key) | mainThread=\(Thread.isMainThread)")
+            Self.debugLog("DECODE START | key=\(key) | mainThread=\(Thread.isMainThread)")
 
             let image = UIImage(
                 blurHash: blurHash,
@@ -62,7 +62,7 @@ final class BlurHashImageCache {
             let durationMs = (CFAbsoluteTimeGetCurrent() - start) * 1000
             let result = image == nil ? "FAILED" : "SUCCESS"
 
-            debugLog(
+            Self.debugLog(
                 String(
                     format: "DECODE END | key=%@ | result=%@ | duration=%.2fms",
                     key,
@@ -72,7 +72,7 @@ final class BlurHashImageCache {
             )
 
             guard let self else {
-                self?.completeOnMain(completion, image: image)
+                Self.completeOnMain(completion, image: image)
                 return
             }
 
@@ -124,11 +124,11 @@ final class BlurHashImageCache {
         )
 
         for completion in completions {
-            completeOnMain(completion, image: image)
+            Self.completeOnMain(completion, image: image)
         }
     }
 
-    private func completeOnMain(
+    private static func completeOnMain(
         _ completion: @escaping (UIImage?) -> Void,
         image: UIImage?
     ) {
@@ -149,7 +149,7 @@ final class BlurHashImageCache {
         return cgImage.bytesPerRow * cgImage.height
     }
 
-    private func debugLog(_ message: String) {
+    private static func debugLog(_ message: String) {
 #if DEBUG
         print("[TurboImage][BlurHash] \(message)")
 #endif

@@ -18,68 +18,71 @@ final class BlurHashImageCache {
         punch: Float = 1,
         completion: @escaping (UIImage?) -> Void
     ) {
-        let key = cacheKey(
-            for: blurHash,
-            size: size,
-            punch: punch
-        )
+        let key = cacheKey(for: blurHash, size: size, punch: punch)
 
-        // Return cached image immediately.
         if let cachedImage = cache.object(forKey: key as NSString) {
-            completeOnMain(
-                completion,
-                image: cachedImage
-            )
+            debugLog("CACHE HIT | key=\(key) | cacheCount=\(cache.countLimit)")
+            completeOnMain(completion, image: cachedImage)
             return
         }
 
+        debugLog("CACHE MISS | key=\(key)")
+
         var shouldDecode = false
+        var waitingCount = 0
 
         lock.lock()
-
         if inFlight[key] != nil {
-            // A decode for this BlurHash is already in progress.
-            // Wait for the existing decode instead of decoding again.
             inFlight[key]?.append(completion)
+            waitingCount = inFlight[key]?.count ?? 0
         } else {
             inFlight[key] = [completion]
             shouldDecode = true
         }
-
         lock.unlock()
 
-        guard shouldDecode else {
+        if !shouldDecode {
+            debugLog("IN-FLIGHT HIT | key=\(key) | waitingCallbacks=\(waitingCount)")
             return
         }
 
-        // Decode BlurHash in the background.
+        debugLog("DECODE QUEUED | key=\(key) | qos=utility")
+
         DispatchQueue.global(qos: .utility).async { [weak self] in
+            let start = CFAbsoluteTimeGetCurrent()
+
+            debugLog("DECODE START | key=\(key) | mainThread=\(Thread.isMainThread)")
+
             let image = UIImage(
                 blurHash: blurHash,
                 size: size,
                 punch: punch
             )
 
+            let durationMs = (CFAbsoluteTimeGetCurrent() - start) * 1000
+            let result = image == nil ? "FAILED" : "SUCCESS"
+
+            debugLog(
+                String(
+                    format: "DECODE END | key=%@ | result=%@ | duration=%.2fms",
+                    key,
+                    result,
+                    durationMs
+                )
+            )
+
             guard let self else {
-                if Thread.isMainThread {
-                    completion(image)
-                } else {
-                    DispatchQueue.main.async {
-                        completion(image)
-                    }
-                }
+                self?.completeOnMain(completion, image: image)
                 return
             }
 
-            self.finish(
-                key: key,
-                image: image
-            )
+            self.finish(key: key, image: image)
         }
     }
 
     func removeAll() {
         cache.removeAllObjects()
+        debugLog("CACHE CLEARED | BlurHash cache removed")
     }
 
     private func cacheKey(
@@ -87,14 +90,13 @@ final class BlurHashImageCache {
         size: CGSize,
         punch: Float
     ) -> String {
-        "(blurHash)|(Int(size.width))x(Int(size.height))|(punch)"
+        "\(blurHash)|\(Int(size.width))x\(Int(size.height))|\(punch)"
     }
 
     private func finish(
         key: String,
         image: UIImage?
     ) {
-        // Cache the decoded image.
         if let image {
             let cost = imageCost(image)
 
@@ -103,21 +105,26 @@ final class BlurHashImageCache {
                 forKey: key as NSString,
                 cost: cost
             )
+
+            debugLog(
+                String(
+                    format: "CACHE STORE | key=%@ | cost=%.2fKB",
+                    key,
+                    Double(cost) / 1024.0
+                )
+            )
         }
 
-        // Get all requests waiting for this BlurHash.
         lock.lock()
-
         let completions = inFlight.removeValue(forKey: key) ?? []
-
         lock.unlock()
 
-        // Complete all requests on the main thread.
+        debugLog(
+            "COMPLETE | key=\(key) | callbacks=\(completions.count) | cached=\(image != nil)"
+        )
+
         for completion in completions {
-            completeOnMain(
-                completion,
-                image: image
-            )
+            completeOnMain(completion, image: image)
         }
     }
 
@@ -140,5 +147,11 @@ final class BlurHashImageCache {
         }
 
         return cgImage.bytesPerRow * cgImage.height
+    }
+
+    private func debugLog(_ message: String) {
+#if DEBUG
+        print("[TurboImage][BlurHash] \(message)")
+#endif
     }
 }

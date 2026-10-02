@@ -73,6 +73,7 @@ export interface TurboImageProps extends AccessibilityProps, ViewProps {
   isProgressiveImageRenderingEnabled?: boolean;
   allowHardware?: boolean;
   format?: Format;
+  gifPaused?: boolean;
   onStart?: (result: NativeSyntheticEvent<Start>) => void;
   onSuccess?: (result: NativeSyntheticEvent<Success>) => void;
   onProgress?: (result: NativeSyntheticEvent<Progress>) => void;

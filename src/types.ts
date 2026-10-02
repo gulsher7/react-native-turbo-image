@@ -72,6 +72,7 @@ export interface TurboImageProps extends AccessibilityProps, ViewProps {
   enableLiveTextInteraction?: boolean;
   isProgressiveImageRenderingEnabled?: boolean;
   allowHardware?: boolean;
+  enableBlurHashOptimization?: boolean;
   format?: Format;
   onStart?: (result: NativeSyntheticEvent<Start>) => void;
   onSuccess?: (result: NativeSyntheticEvent<Success>) => void;

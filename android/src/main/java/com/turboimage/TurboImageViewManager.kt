@@ -254,6 +254,11 @@ class TurboImageViewManager : SimpleViewManager<TurboImageView>(), LifecycleEven
     view.format = format
   }
 
+  @ReactProp(name = "gifPaused")
+  fun setGifPaused(view: TurboImageView, paused: Boolean?) {
+    view.gifPaused = paused == true
+  }
+
 
   companion object {
     private const val REACT_CLASS = "TurboImageView"

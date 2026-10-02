@@ -32,6 +32,8 @@ RCT_EXPORT_VIEW_PROPERTY(enableLiveTextInteraction, BOOL)
 
 RCT_EXPORT_VIEW_PROPERTY(isProgressiveImageRenderingEnabled, BOOL)
 
+RCT_EXPORT_VIEW_PROPERTY(enableBlurHashOptimization, BOOL)
+
 RCT_EXPORT_VIEW_PROPERTY(format, NSString)
 
 RCT_EXPORT_VIEW_PROPERTY(onStart, RCTDirectEventBlock)
@@ -58,4 +60,3 @@ RCT_EXTERN_METHOD(clearDiskCache:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject)
 
 @end
-

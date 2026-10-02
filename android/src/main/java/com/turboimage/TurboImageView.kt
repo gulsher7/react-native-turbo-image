@@ -2,6 +2,7 @@ package com.turboimage
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.graphics.drawable.Animatable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.util.Base64
@@ -37,6 +38,24 @@ class TurboImageView(private val reactContext: ThemedReactContext) :
   var allowHardware: Boolean? = null
 
   var format: String? = null
+
+  var gifPaused: Boolean = false
+    set(value) {
+      field = value
+      syncGifAnimation()
+    }
+
+  fun syncGifAnimation() {
+    if (format != "gif") return
+
+    (drawable as? Animatable)?.let { animatable ->
+      if (gifPaused) {
+        animatable.stop()
+      } else {
+        animatable.start()
+      }
+    }
+  }
 
   val blurhashDrawable: Drawable?
     get() {

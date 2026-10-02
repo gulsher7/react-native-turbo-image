@@ -47,6 +47,7 @@ const TurboImageView = forwardRef(
       enableLiveTextInteraction,
       isProgressiveImageRenderingEnabled,
       allowHardware,
+      enableBlurHashOptimization,
       format,
       onStart,
       onSuccess,
@@ -98,6 +99,7 @@ const TurboImageView = forwardRef(
           tint={processColor(tint)}
           enableLiveTextInteraction={enableLiveTextInteraction}
           allowHardware={allowHardware}
+          enableBlurHashOptimization={enableBlurHashOptimization}
           isProgressiveImageRenderingEnabled={
             isProgressiveImageRenderingEnabled
           }

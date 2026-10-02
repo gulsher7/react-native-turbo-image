@@ -48,6 +48,7 @@ const TurboImageView = forwardRef(
       isProgressiveImageRenderingEnabled,
       allowHardware,
       format,
+      gifPaused,
       onStart,
       onSuccess,
       onFailure,
@@ -102,6 +103,7 @@ const TurboImageView = forwardRef(
             isProgressiveImageRenderingEnabled
           }
           format={format}
+          gifPaused={gifPaused}
           onStart={onStart}
           onSuccess={onSuccess}
           onFailure={onFailure}

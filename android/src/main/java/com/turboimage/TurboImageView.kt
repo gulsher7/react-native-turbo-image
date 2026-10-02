@@ -35,6 +35,7 @@ class TurboImageView(private val reactContext: ThemedReactContext) :
   var monochrome: Int? = null
   var tint: Int? = null
   var allowHardware: Boolean? = null
+  var enableBlurHashOptimization: Boolean = false
 
   var format: String? = null
 
@@ -109,6 +110,7 @@ class TurboImageView(private val reactContext: ThemedReactContext) :
       monochrome,
       tint,
       allowHardware,
+      enableBlurHashOptimization,
       format
     ).joinToString("|") { it?.toString() ?: "" }
   }
@@ -190,7 +192,12 @@ class TurboImageView(private val reactContext: ThemedReactContext) :
   }
 
   private fun drawBlurhash(view: TurboImageView, blurhash: String): Drawable {
-    val bitmap = BlurHashDecoder.decode(blurhash, 8, 8)
+    val bitmap = BlurHashDecoder.decode(
+      blurHash = blurhash,
+      width = 8,
+      height = 8,
+      useBitmapCache = enableBlurHashOptimization
+    )
     return BitmapDrawable(view.context.resources, bitmap)
   }
 }

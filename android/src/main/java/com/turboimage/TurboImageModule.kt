@@ -62,6 +62,10 @@ class TurboImageModule(private val context: ReactApplicationContext) :
   @ReactMethod
   fun clearMemoryCache(promise: Promise) {
     Coil.imageLoader(context).memoryCache?.clear()
+    BlurHashDecoder.clearCache()
+    if (BuildConfig.DEBUG) {
+      android.util.Log.d("TurboImageBlurHash", "MEMORY CACHE CLEARED")
+    }
     promise.resolve("Success")
   }
 

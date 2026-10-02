@@ -57,6 +57,11 @@ class TurboImageView(private val reactContext: ThemedReactContext) :
     }
   }
 
+  override fun setImageDrawable(drawable: Drawable?) {
+    super.setImageDrawable(drawable)
+    syncGifAnimation()
+  }
+
   val blurhashDrawable: Drawable?
     get() {
       return blurhash?.let {

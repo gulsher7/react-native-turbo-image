@@ -21,7 +21,7 @@ final class BlurHashImageCache {
         let key = cacheKey(for: blurHash, size: size, punch: punch)
 
         if let cachedImage = cache.object(forKey: key as NSString) {
-            Self.debugLog("CACHE HIT | key=\(key) | cacheCount=\(cache.countLimit)")
+            Self.debugLog("CACHE HIT | key=\(key) | cacheLimit=\(cache.countLimit)")
             Self.completeOnMain(completion, image: cachedImage)
             return
         }
@@ -151,7 +151,7 @@ final class BlurHashImageCache {
 
     private static func debugLog(_ message: String) {
 #if DEBUG
-        print("[TurboImage][BlurHash] \(message)")
+        print("[TurboImage][BlurHash][PERF] \(message)")
 #endif
     }
 }

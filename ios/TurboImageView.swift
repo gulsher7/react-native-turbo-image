@@ -229,6 +229,19 @@ final class TurboImageView : UIView {
 }
 
 fileprivate extension TurboImageView {
+  func syncGifAnimation() {
+    guard format as? String == Constants.gif,
+          let gifView = lazyImageView.imageView as? GIFImageView else {
+      return
+    }
+
+    if gifPaused {
+      gifView.stopAnimatingGIF()
+    } else {
+      gifView.startAnimatingGIF()
+    }
+  }
+  
   func reloadImage() {
     registerObservers()
     if let imageRequest {

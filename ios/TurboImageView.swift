@@ -236,9 +236,13 @@ fileprivate extension TurboImageView {
     }
 
     if gifPaused {
-      gifView.stopAnimatingGIF()
+      if gifView.isAnimatingGIF {
+        gifView.stopAnimatingGIF()
+      }
     } else {
-      gifView.startAnimatingGIF()
+      if !gifView.isAnimatingGIF {
+        gifView.startAnimatingGIF()
+      }
     }
   }
   

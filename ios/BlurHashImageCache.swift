@@ -20,12 +20,16 @@ final class BlurHashImageCache {
     ) {
         let key = cacheKey(for: blurHash, size: size, punch: punch)
 
+        Self.recordRequest()
+
         if let cachedImage = cache.object(forKey: key as NSString) {
+            Self.recordHit()
             Self.debugLog("CACHE HIT | key=\(key) | cacheLimit=\(cache.countLimit)")
             Self.completeOnMain(completion, image: cachedImage)
             return
         }
 
+        Self.recordMiss()
         Self.debugLog("CACHE MISS | key=\(key)")
 
         var shouldDecode = false
@@ -46,6 +50,7 @@ final class BlurHashImageCache {
             return
         }
 
+        Self.recordDecode()
         Self.debugLog("DECODE QUEUED | key=\(key) | qos=utility")
 
         DispatchQueue.global(qos: .utility).async { [weak self] in
@@ -83,6 +88,68 @@ final class BlurHashImageCache {
     func removeAll() {
         cache.removeAllObjects()
         Self.debugLog("CACHE CLEARED | BlurHash cache removed")
+        Self.debugStats()
+    }
+
+    private static func recordRequest() {
+#if DEBUG
+        lockStats.lock()
+        requestCount += 1
+        let shouldLog = requestCount % 50 == 0
+        lockStats.unlock()
+        if shouldLog {
+            debugStats()
+        }
+#endif
+    }
+
+    private static func recordHit() {
+#if DEBUG
+        lockStats.lock()
+        hitCount += 1
+        lockStats.unlock()
+#endif
+    }
+
+    private static func recordMiss() {
+#if DEBUG
+        lockStats.lock()
+        missCount += 1
+        lockStats.unlock()
+#endif
+    }
+
+    private static func recordDecode() {
+#if DEBUG
+        lockStats.lock()
+        decodeCount += 1
+        lockStats.unlock()
+#endif
+    }
+
+    private static let lockStats = NSLock()
+
+    private static func debugStats() {
+#if DEBUG
+        lockStats.lock()
+        let requests = requestCount
+        let hits = hitCount
+        let misses = missCount
+        let decodes = decodeCount
+        lockStats.unlock()
+
+        let hitRate = requests > 0 ? (Double(hits) / Double(requests)) * 100 : 0
+        debugLog(
+            String(
+                format: "STATS | requests=%d | hits=%d | misses=%d | decodes=%d | hitRate=%.2f%%",
+                requests,
+                hits,
+                misses,
+                decodes,
+                hitRate
+            )
+        )
+#endif
     }
 
     private func cacheKey(

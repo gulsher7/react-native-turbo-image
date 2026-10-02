@@ -31,6 +31,14 @@ final class TurboImageView : UIView {
   private var imageRequest: ImageRequest?
   private var requestInFlight: Bool = false
   private var placeholderGeneration: Int = 0
+
+  @objc var enableBlurHashOptimization: Bool = false {
+    didSet {
+      if placeholder != nil {
+        updatePlaceholder()
+      }
+    }
+  }
   #if !os(tvOS) && canImport(VisionKit)
   private var liveTextTask: Task<Void, Never>?
   #endif
@@ -96,6 +104,12 @@ final class TurboImageView : UIView {
   
   @objc var placeholder: NSDictionary? {
     didSet {
+      updatePlaceholder()
+    }
+  }
+
+  private func updatePlaceholder() {
+    if enableBlurHashOptimization {
       placeholderGeneration += 1
       let generation = placeholderGeneration
 
@@ -104,7 +118,7 @@ final class TurboImageView : UIView {
         return
       }
 
-      // Prefer an already cached image because it is immediately available.
+      // Optimized path: reuse cached placeholders and avoid duplicate BlurHash decoding.
       if let memoryCacheKey = placeholder.value(forKey: "memoryCacheKey") as? String {
         let request = ImageRequest(url: URL(string: memoryCacheKey))
         if let memoryCachedImage = ImagePipeline.shared.cache.cachedImage(for: request, caches: .memory)?.image {
@@ -130,9 +144,39 @@ final class TurboImageView : UIView {
           }
         }
       }
+
+      return
+    }
+
+    // Legacy path: preserve the previous TurboImage behavior.
+    placeholderGeneration += 1
+    guard let placeholder else { return }
+
+    if let blurhash = placeholder.value(forKey: "blurhash") as? String {
+      DispatchQueue.global(qos: .userInteractive).async { [weak self] in
+        let image = UIImage(blurHash: blurhash)
+        DispatchQueue.main.async { [weak self] in
+          self?.lazyImageView.placeholderImage = image
+        }
+      }
+    }
+
+    if let thumbhash = placeholder.value(forKey: "thumbhash") as? String {
+      DispatchQueue.global(qos: .userInteractive).async { [weak self] in
+        let image = UIImage(thumbhash: thumbhash)
+        DispatchQueue.main.async { [weak self] in
+          self?.lazyImageView.placeholderImage = image
+        }
+      }
+    }
+
+    if let memoryCacheKey = placeholder.value(forKey: "memoryCacheKey") as? String {
+      let request = ImageRequest(url: URL(string: memoryCacheKey))
+      let memoryCachedImage = ImagePipeline.shared.cache.cachedImage(for: request, caches: .memory)?.image
+      lazyImageView.placeholderImage = memoryCachedImage
     }
   }
-  
+
   @objc var fadeDuration: NSNumber = 300
   
   @objc var cachePolicy = "urlCache" {
